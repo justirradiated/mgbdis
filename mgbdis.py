@@ -507,7 +507,7 @@ class Bank:
                     # when referencing a label, we need to explicitely tell rgbds to use the short load opcode
                     instruction_name = 'ldh'
                     operand_values.append('[{}]'.format(label))
-                elif full_value in hardware_labels:
+                elif full_value in hardware_labels and not style['pret_style']:
                     operand_values.append('[{}]'.format(hardware_labels[full_value]))
                 else:
                     # use one of the ldh_a8_formatters formatters
@@ -903,9 +903,10 @@ class ROM:
 
     def load_symbols(self):
         symbols = Symbols()
-
-        for symbol_def in default_symbols:
-            symbols.add_symbol_definition(symbol_def)
+        
+        if not style['pret_style']:
+            for symbol_def in default_symbols:
+                symbols.add_symbol_definition(symbol_def)
 
         if self.supports_gbc():
             for symbol_def in gbc_symbols:
@@ -1272,7 +1273,7 @@ parser.add_argument('--hli', help='Mnemonic to use for \'ld [hl+], a\' type inst
 parser.add_argument('--ldh_a8', help='Mnemonic to use for \'ldh [a8], a\' type instructions.', type=str, default='ldh_a8', choices=['ldh_a8', 'ldh_ffa8', 'ld_ff00_a8'])
 parser.add_argument('--ld_c', help='Mnemonic to use for \'ld [c], a\' type instructions.', type=str, default='ld_c', choices=['ld_c', 'ldh_c', 'ld_ff00_c'])
 parser.add_argument('--disable-halt-nops', help='Disable RGBDS\'s automatic insertion of \'nop\' instructions after \'halt\' instructions.', action='store_true')
-parser.add_argument('--disable-auto-ldh', help='Disable RGBDS\'s automatic optimisation of \'ld [$ff00+a8], a\' to \'ldh [a8], a\' instructions. Requires RGBDS >= v0.3.7', action='store_true')
+parser.add_argument('--disable-auto-ldh', help='Disable RGBDS\'s automatic optimisation of \'ld [$ff00+a8], a\' to \'ldh [a8], a\' instructions. Requires RGBDS >= v0.3.7', action='store_true', default='True')
 parser.add_argument('--pret-style', help='Use pret style labels, with location comments following them.', action='store_true', default='True')
 parser.add_argument('--overwrite', help='Allow generating a disassembly into an already existing directory', action='store_true', default='True')
 parser.add_argument('--debug', help='Display debug output', action='store_true')
