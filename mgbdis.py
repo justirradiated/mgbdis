@@ -338,7 +338,7 @@ class Bank:
             for instruction_name in ['call', 'jp', 'jr']:
                 if address in self.target_addresses[instruction_name]:
                     if style['pret_style']:
-                        labels.append(self.format_label_pret(address) + ': ' + self.format_label_comment(address))
+                        labels.append(self.format_label_pret(address) + ': ') # + self.format_label_comment(address))
                         break # Exit early to avoid unecessary duplicates
                     else:
                         labels.append(self.format_label(instruction_name, address) + ':')
@@ -353,7 +353,7 @@ class Bank:
 
     def format_label_pret(self, address):
         formatted_address = format_hex('{:04x}'.format(self.rom_base_address + address))
-        return 'Func_{0}'.format(formatted_address)
+        return 'Function{0}'.format(formatted_address)
 
     def format_label_comment(self, address):
         formatted_bank = format_hex('{:01x}'.format(self.bank_number))
@@ -407,6 +407,8 @@ class Bank:
 
         if self.bank_number == 0:
             self.append_output('SECTION "ROM Bank ${0:03x}", ROM0[$0]'.format(self.bank_number))
+        elif style['pret_style']:
+            self.append_output('SECTION "engine/dumps/bank{0:02x}.asm", ROMX'.format(self.bank_number))
         else:
             self.append_output('SECTION "ROM Bank ${0:03x}", ROMX[$4000], BANK[${0:x}]'.format(self.bank_number))
         self.append_output('')
@@ -637,7 +639,7 @@ class Bank:
                     # remove one space character for the semicolon
                     if ' ' in comment_spacing:
                         comment_spacing = comment_spacing[1:]
-                    self.append_output(';' + comment_spacing + 'fallthrough')
+                    self.append_output("") # (';' + comment_spacing + 'fallthrough')
 
             # add some empty lines after returns and jumps to break up the code blocks
             if instruction_name in ['ret', 'reti', 'jr', 'jp']:
@@ -964,7 +966,7 @@ class ROM:
             # progress indicator
             print('.', end='', flush=True)
 
-        path = os.path.join(self.output_directory, 'bank_{0:03x}.asm'.format(bank))
+        path = os.path.join(self.output_directory, 'bank{0:02x}.asm'.format(bank))
         f = open(path, 'w')
 
         self.write_header(f)
@@ -978,6 +980,7 @@ class ROM:
         f.write('; This file was created with:\n')
         f.write('; {}\n'.format(app_name))
         f.write('; https://github.com/mattcurrie/mgbdis\n\n')
+        f.write('INCLUDE "constants.asm"\n\n')
 
 
     def copy_hardware_inc(self):
@@ -1265,13 +1268,13 @@ parser.add_argument('--align-operands', help='Format the instruction operands to
 parser.add_argument('--indent-spaces', help='Number of spaces to use to indent instructions', type=int, default=4)
 parser.add_argument('--indent-tabs', help='Use tabs for indenting instructions', action='store_true')
 parser.add_argument('--uppercase-db', help='Use uppercase for DB data declarations', action='store_true')
-parser.add_argument('--hli', help='Mnemonic to use for \'ld [hl+], a\' type instructions.', type=str, default='hl+', choices=['hl+', 'hli', 'ldi'])
+parser.add_argument('--hli', help='Mnemonic to use for \'ld [hl+], a\' type instructions.', type=str, default='hli', choices=['hl+', 'hli', 'ldi'])
 parser.add_argument('--ldh_a8', help='Mnemonic to use for \'ldh [a8], a\' type instructions.', type=str, default='ldh_a8', choices=['ldh_a8', 'ldh_ffa8', 'ld_ff00_a8'])
 parser.add_argument('--ld_c', help='Mnemonic to use for \'ld [c], a\' type instructions.', type=str, default='ld_c', choices=['ld_c', 'ldh_c', 'ld_ff00_c'])
 parser.add_argument('--disable-halt-nops', help='Disable RGBDS\'s automatic insertion of \'nop\' instructions after \'halt\' instructions.', action='store_true')
 parser.add_argument('--disable-auto-ldh', help='Disable RGBDS\'s automatic optimisation of \'ld [$ff00+a8], a\' to \'ldh [a8], a\' instructions. Requires RGBDS >= v0.3.7', action='store_true')
-parser.add_argument('--pret-style', help='Use pret style labels, with location comments following them.', action='store_true')
-parser.add_argument('--overwrite', help='Allow generating a disassembly into an already existing directory', action='store_true')
+parser.add_argument('--pret-style', help='Use pret style labels, with location comments following them.', action='store_true', default='True')
+parser.add_argument('--overwrite', help='Allow generating a disassembly into an already existing directory', action='store_true', default='True')
 parser.add_argument('--debug', help='Display debug output', action='store_true')
 args = parser.parse_args()
 
